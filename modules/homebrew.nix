@@ -36,6 +36,7 @@
       "tmux"
       "wget"
       "mole"
+      "uv"
     ];
 
     casks = [

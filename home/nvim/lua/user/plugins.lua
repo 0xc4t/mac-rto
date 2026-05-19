@@ -1,5 +1,5 @@
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
-if not vim.loop.fs_stat(lazypath) then
+if vim.fn.empty(vim.fn.glob(lazypath)) then
   vim.fn.system({
     "git", "clone", "--filter=blob:none",
     "https://github.com/folke/lazy.nvim.git",
@@ -35,13 +35,28 @@ local plugins = {
 
   -- File Explorer
   {
-    "nvim-tree/nvim-tree.lua",
-    config = function()
-      require("nvim-tree").setup({
-        view = { side = "left", width = 30 },
-        renderer = { indent_markers = { enable = true } }
-      })
-    end
+    "folke/snacks.nvim",
+    priority = 1000,
+    lazy = false,
+    opts = {
+      explorer = {
+        replace_netrw = true,
+      },
+      picker = {
+        sources = {
+          explorer = {
+            layout = {
+              preset = "sidebar",
+              preview = false,
+              layout = {
+                width = 30,
+                min_width = 30,
+              },
+            },
+          },
+        },
+      },
+    },
   },
 
   -- Status Line
@@ -90,31 +105,91 @@ local plugins = {
     end
   },
 
-  -- LSP & Mason (Konfigurasi digabung di sini)
+  -- LSP & Mason
   {
     "neovim/nvim-lspconfig",
     dependencies = {
       { "williamboman/mason.nvim", build = ":MasonUpdate" },
       { "williamboman/mason-lspconfig.nvim" },
-      { "hrsh7th/cmp-nvim-lsp" },
     },
     config = function()
       require("user.lsp").setup()
     end
   },
 
-  -- Autocomplete
+  -- LSP Progress UI
   {
-    "hrsh7th/nvim-cmp",
+    "j-hui/fidget.nvim",
+    event = "LspAttach",
+    opts = {
+      progress = {
+        display = {
+          render_limit = 5,
+          done_ttl = 2,
+          done_icon = "✓",
+          progress_icon = { pattern = "dots", period = 1 },
+        },
+      },
+      notification = {
+        window = {
+          winblend = 0,
+          border = "none",
+          relative = "editor",
+        },
+      },
+    },
+  },
+
+  -- Autocomplete (blink.cmp)
+  {
+    "saghen/blink.cmp",
+    version = "1.*",
     dependencies = {
-      "hrsh7th/cmp-nvim-lsp",
-      "hrsh7th/cmp-buffer",
-      "hrsh7th/cmp-path",
-      "L3MON4D3/LuaSnip",
-      "saadparwaiz1/cmp_luasnip",
       "rafamadriz/friendly-snippets",
     },
-    config = function() require("user.cmp") end
+    opts = {
+      keymap = {
+        preset = "default",
+        ["<C-k>"] = { "select_prev", "fallback" },
+        ["<C-j>"] = { "select_next", "fallback" },
+        ["<C-b>"] = { "scroll_documentation_up", "fallback" },
+        ["<C-f>"] = { "scroll_documentation_down", "fallback" },
+        ["<C-Space>"] = { "show", "fallback" },
+        ["<C-e>"] = { "cancel", "fallback" },
+        ["<CR>"] = { "accept", "fallback" },
+        ["<Tab>"] = { "select_next", "snippet_forward", "fallback" },
+        ["<S-Tab>"] = { "select_prev", "snippet_backward", "fallback" },
+      },
+      appearance = {
+        nerd_font_variant = "mono",
+      },
+      completion = {
+        documentation = { auto_show = true },
+        menu = {
+          draw = {
+            columns = {
+              { "kind_icon" },
+              { "label", "label_description", gap = 1 },
+            },
+          },
+        },
+      },
+      sources = {
+        default = { "lsp", "path", "snippets", "buffer" },
+      },
+      fuzzy = { implementation = "prefer_rust" },
+    },
+    opts_extend = { "sources.default" },
+  },
+
+  -- Formatter (conform.nvim)
+  {
+    "stevearc/conform.nvim",
+    event = { "BufWritePre" },
+    cmd = { "ConformInfo" },
+    config = function()
+      require("user.conform")
+    end
   },
 
   -- Helpers
